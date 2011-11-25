@@ -28,6 +28,7 @@
 #include "BandwidthController.h"
 #include "ResolverController.h"
 #include "SecondaryTableController.h"
+#include "RouteController.h"
 
 class CommandListener : public FrameworkListener {
     static TetherController *sTetherCtrl;
@@ -38,7 +39,7 @@ class CommandListener : public FrameworkListener {
     static BandwidthController *sBandwidthCtrl;
     static ResolverController *sResolverCtrl;
     static SecondaryTableController *sSecondaryTableCtrl;
-
+    static RouteController *sRouteCtrl;
 public:
     CommandListener();
     virtual ~CommandListener() {}
@@ -122,6 +123,13 @@ private:
         virtual ~ResolverCmd() {}
         int runCommand(SocketClient *c, int argc, char ** argv);
     };
+    class RouteCmd : public NetdCommand {
+    public:
+        RouteCmd();
+        virtual ~RouteCmd() {}
+        int runCommand(SocketClient *c, int argc, char ** argv);
+    };
+
 };
 
 #endif

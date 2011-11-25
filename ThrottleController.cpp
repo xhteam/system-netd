@@ -33,6 +33,8 @@
 
 
 #include "ThrottleController.h"
+#include <sys/system_properties.h>
+#define APQ_TARGET_NAME "apq"
 
 static char TC_PATH[] = "/system/bin/tc";
 
@@ -45,13 +47,21 @@ int ThrottleController::runTcCmd(const char *cmd) {
     char *buffer;
     size_t len = strnlen(cmd, 255);
     int res;
+    char value[PROP_VALUE_MAX];
+    memset(value, 0, sizeof(value));
+    __system_property_get("ro.baseband", value);
 
-    if (len == 255) {
-        LOGE("tc command too long");
-        errno = E2BIG;
-        return -1;
+    //If the target does not have radio,
+    // return -1 indicating a error in starting tc.
+    if (!strncmp(value, APQ_TARGET_NAME, 3)){
+       LOGE ("Radio is not present for device, cannot run TC (traffic control)\n");
+       return -1;
     }
-
+    if (len == 255) {
+      LOGE("tc command too long");
+      errno = E2BIG;
+      return -1;
+    }
     asprintf(&buffer, "%s %s", TC_PATH, cmd);
     res = system_nosh(buffer);
     free(buffer);
