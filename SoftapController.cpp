@@ -77,7 +77,11 @@ static const char HOSTAPD_PROP_NAME[]      = "init.svc.hostapd";
 #define WIFI_DEFAULT_PREAMBLE   0
 #define WIFI_AP_INTERFACE       "wlan0"
 
+#else
+static const char HOSTAPD_CONF_FILE[]    = "/data/misc/wifi/hostapd.conf";
+#endif
 
+#ifdef ATH_WIFI
 static int if_rename(int sock, const char *oldName, const char *newName)
 {
     int ret;
@@ -187,7 +191,6 @@ int wifi_start_hostapd()
             && strcmp(supp_status, "running") == 0) {
         return 0;
     }
-
 
     /* Clear out any stale socket files that might be left over. */
     wpa_ctrl_cleanup();
