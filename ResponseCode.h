@@ -44,7 +44,6 @@ public:
     static const int InterfaceTxThrottleResult = 219;
     static const int QuotaCounterResult        = 220;
     static const int TetheringStatsResult      = 221;
-    static const int RouteConfigurationResult  = 222;
     // 400 series - The command was accepted but the requested action
     // did not take place.
     static const int OperationFailed = 400;

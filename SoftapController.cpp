@@ -866,7 +866,13 @@ int SoftapController::fwReloadSoftap(int argc, char *argv[])
     }
  LOGD("fwReloadSoftap: argv[2]:%s argv[3]:%s", argv[2], argv[3]);
 #ifdef ATH_WIFI
-    ret = 0;
+    
+    if (strcmp(argv[3], "AP") == 0) {
+      ret = wifi_load_ap_driver();
+    }else if (strcmp(argv[3], "P2P")==0){
+    }else{
+      ret = 0;
+    }
 #else
     iface = argv[2];
 
