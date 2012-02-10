@@ -75,7 +75,6 @@ static const char HOSTAPD_PROP_NAME[]      = "init.svc.hostapd";
 #define WIFI_DEFAULT_CHANNEL    6
 #define WIFI_DEFAULT_MAX_STA    8
 #define WIFI_DEFAULT_PREAMBLE   0
-#define WIFI_AP_INTERFACE       "wlan0"
 
 #else
 static const char HOSTAPD_CONF_FILE[]    = "/data/misc/wifi/hostapd.conf";
@@ -464,7 +463,8 @@ int SoftapController::stopSoftap() {
     int ret;
 #ifdef ATH_WIFI 
     struct ifreq ifr;
-    char ifname[PROPERTY_VALUE_MAX];
+    char ifstaname[PROPERTY_VALUE_MAX];
+    char ifapname[PROPERTY_VALUE_MAX];
     struct iwreq wrq;
     int fnum;
 #endif
@@ -495,10 +495,10 @@ int SoftapController::stopSoftap() {
         return -1;
     }
 
-    property_get("wifi.interface", ifname, "wlan0");
-
+    property_get("wifi.interface", ifstaname, "wlan0");
+    property_get("wifi.ap.interface", ifapname, "wlap0");
     /* Rename AP interface back to station interface name*/
-    if ((ret = if_rename(mSock, WIFI_AP_INTERFACE , ifname)) < 0) {
+    if ((ret = if_rename(mSock, ifapname, ifstaname)) < 0) {
         LOGE("Softap stopap - AR6000_IOCTL remove ap interface failed: %d", ret);
         return -1;
     }
@@ -507,7 +507,7 @@ int SoftapController::stopSoftap() {
 
     /* Step #1: iwconfig mode managed */
     memset(&wrq, 0, sizeof(wrq));
-    strncpy(wrq.ifr_name, ifname, sizeof(wrq.ifr_name));
+    strncpy(wrq.ifr_name, ifstaname, sizeof(wrq.ifr_name));
     wrq.u.mode = IW_MODE_INFRA;
 
     if ((ret = ioctl(mSock, SIOCSIWMODE, &wrq)) < 0) {
@@ -517,7 +517,7 @@ int SoftapController::stopSoftap() {
 
     /* Step #2: iwconfig essid abcdefghijklmnopqrstuvwxyz */
     memset(&wrq, 0, sizeof(wrq));
-    strncpy(wrq.ifr_name, ifname, sizeof(wrq.ifr_name));
+    strncpy(wrq.ifr_name, ifstaname, sizeof(wrq.ifr_name));
     wrq.u.essid.flags = 1; /* SSID active */
     strcpy(mBuf, "abcdefghijklmnopqrstuvwxyz");    
     wrq.u.essid.pointer = (caddr_t *)mBuf;
@@ -679,7 +679,7 @@ int SoftapController::setSoftap(int argc, char *argv[]) {
         }
     } else {
         struct ifreq ifr;
-        char ifname[256];
+        char ifapname[256];
 
         memset(&ifr, 0, sizeof(ifr));
         strncpy(ifr.ifr_name, argv[2], sizeof(ifr.ifr_name));
@@ -692,9 +692,9 @@ int SoftapController::setSoftap(int argc, char *argv[]) {
             LOGE("AR6000_IOCTL %s set wlan state failed: %d:%s", ifr.ifr_name, ret, strerror(errno));
             return ret;
         }
-
+	property_get("wifi.ap.interface", ifapname, "wlap0");
         /* Add AP interface */
-        if ((ret = if_rename(mSock, ifr.ifr_name, WIFI_AP_INTERFACE)) < 0) {
+        if ((ret = if_rename(mSock, ifr.ifr_name, ifapname)) < 0) {
             LOGE("Softap startap - AR6000_IOCTL %s addif %s failed: %d", ifr.ifr_name, mIface, ret);
             return ret;
         }
@@ -864,14 +864,17 @@ int SoftapController::fwReloadSoftap(int argc, char *argv[])
         LOGE("Softap fwreload - missing arguments");
         return -1;
     }
- LOGD("fwReloadSoftap: argv[2]:%s argv[3]:%s", argv[2], argv[3]);
+    LOGD("fwReloadSoftap: argv[2]:%s argv[3]:%s", argv[2], argv[3]);
 #ifdef ATH_WIFI
     
     if (strcmp(argv[3], "AP") == 0) {
       ret = wifi_load_ap_driver();
     }else if (strcmp(argv[3], "P2P")==0){
+      ret = wifi_load_p2p_driver();
+    }else if (strcmp(argv[3], "STA")==0){
+      ret = wifi_load_driver();
     }else{
-      ret = 0;
+      ret = -1;
     }
 #else
     iface = argv[2];
