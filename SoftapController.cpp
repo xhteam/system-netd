@@ -162,6 +162,11 @@ int SoftapController::setSoftap(int argc, char *argv[]) {
         } else if (!strcmp(argv[4], "wpa2-psk")) {
             generatePsk(ssid, argv[5], psk_str);
             asprintf(&fbuf, "%swpa=2\nrsn_pairwise=CCMP\nwpa_psk=%s\n", wbuf, psk_str);
+        } else if (!strncmp("wep", argv[4], 3)){
+            if((strlen(argv[5]) == 5) || (strlen(argv[5]) == 13))
+                asprintf(&fbuf, "%swep_default_key=0\nwep_key0=\"%s\"\n", wbuf,argv[5]);
+            else
+                asprintf(&fbuf, "%swep_default_key=0\nwep_key0=%s\n", wbuf,argv[5]);
         } else if (!strcmp(argv[4], "open")) {
             asprintf(&fbuf, "%s", wbuf);
         }
